@@ -23,8 +23,9 @@ end
 
 class MathWorker
 
-	def initialize max
+	def initialize max, mode
 		@max = max
+		@algebra = true if mode == :algebra
 	end
 	
 	def pick_a_number max
@@ -54,10 +55,50 @@ class MathWorker
 		end
 	end
 
+	def say_problem op_a, op_b, operator, result 	
+		if @algebra
+			tokens = ['x']
+			token = tokens[rand(tokens.size)]
+			op_b = token
+		end
+	
+		printf("%s", op_a.to_s)
+		STDOUT.flush
+		Responder.say op_a	
+
+		printf(" %s ", operator.symbol)
+		STDOUT.flush
+		Responder.say operator
+ 
+		printf("%s", op_b.to_s)
+		STDOUT.flush
+		Responder.say op_b
+	
+		printf(" = ")
+		STDOUT.flush
+		Responder.say "equals"
+
+		if @algebra
+			printf("%s\n", result.to_s)
+			STDOUT.flush
+			Responder.say result
+
+			Responder.say "Therefore,"
+			printf("%s", op_b.to_s)
+			STDOUT.flush
+			Responder.say op_b
+		
+			printf(" = ")
+			STDOUT.flush
+			Responder.say "equals"
+		end
+	end
+
 	def process
 		
 		introduction
 
+		last_op_a = nil
 		while true do
 			first = true
 			answer = nil
@@ -66,7 +107,11 @@ class MathWorker
 				if first
 					operator = pick_an_operator
 
-					op_a = pick_a_number @max
+					op_a = nil
+					begin
+						op_a = pick_a_number @max
+					end while op_a == last_op_a && @max != 0
+					last_op_a = op_a
 
 					op_max = operator.symbol == "-" ? op_a : @max
 					op_b = pick_a_number op_max
@@ -74,12 +119,14 @@ class MathWorker
 					result = eval "#{op_a} #{operator.symbol} #{op_b}"
 					first = false
 				end
-			
+
+				result_to_check = @algebra ? op_b : result
+	
 				eat_bytes
 				Responder.say answer 
 				if answer != '' && !answer.nil?
 					answer = answer.to_i
-					if answer == result
+					if answer == result_to_check
 						if (rand 1) == 0
 							Responder.say_random	
 						end
@@ -90,23 +137,8 @@ class MathWorker
 						Responder.say_incorrect	
 					end
 				end
-			
-				printf("%d", op_a)
-				STDOUT.flush
-				Responder.say op_a	
-
-				printf(" %s ", operator.symbol)
-				STDOUT.flush
-				Responder.say operator
-		 
-				printf("%d", op_b)
-				STDOUT.flush
-				Responder.say op_b
-			
-				printf(" = ")
-				STDOUT.flush
-				Responder.say "equals"		
-
+				
+				say_problem op_a, op_b, operator, result
 				answer = nil
 			end
 		end
@@ -114,20 +146,15 @@ class MathWorker
 end
 
 if __FILE__ == $0
-	if ARGV.size != 1
-		puts "Usage: #{$0} <max-number-to-use>"
-		exit
-	end
-	arg = ARGV.shift
+	argc = ARGV.size
+	max = ARGV.shift
+	mode = ARGV.shift
 
-	if arg == 'responses'
-		Responder.say_all
+	if argc != 2 || !["basic","algebra"].include?(mode)
+		puts "Usage: #{$0} <max-number-to-use> <mode: basic|algebra>"
 		exit
 	end
 
-	arg = 5 if arg.nil?
-	arg = arg.to_i
-	
-	math_worker = MathWorker.new arg
+	math_worker = MathWorker.new max.to_i, mode.to_sym
 	math_worker.process
 end
