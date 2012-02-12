@@ -28,6 +28,16 @@ class Responder
 		"Right on."
 	]
 
+	def self.eat_bytes
+		begin
+			while c = STDIN.read_nonblock(1000)
+				##
+			end
+		rescue Errno::EAGAIN
+			##
+		end
+	end
+
 	def self.say_mode
 		if @mode.nil?
 			@mode = :text

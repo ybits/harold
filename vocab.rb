@@ -50,16 +50,6 @@ class VocabWorker
 		send("process_#{@mode}")
 	end
 
-	def eat_bytes
-		begin
-			while c = STDIN.read_nonblock(1000)
-				##
-			end
-		rescue Errno::EAGAIN
-			##
-		end
-	end
-
 	def process_read
 
 		while true do
@@ -67,7 +57,7 @@ class VocabWorker
 			
 			Responder.say "Say this word."
 			sleep 1
-			eat_bytes
+			Responder.eat_bytes
 			puts word
 
 			gets
@@ -104,7 +94,7 @@ class VocabWorker
 					end
 				end
 			
-				eat_bytes
+				Responder.eat_bytes
 				Responder.say "The word is."
 				Responder.say word 
 				sleep 1

@@ -26,6 +26,7 @@ class MathWorker
 	def initialize max, mode
 		@max = max
 		@algebra = true if mode == :algebra
+		@last_op_a = nil
 	end
 	
 	def pick_a_number max
@@ -43,16 +44,6 @@ class MathWorker
 		Responder.say "Are you ready?"
 		sleep 2
 		Responder.say "Let's begin."
-	end
-
-	def eat_bytes
-		begin
-			while c = STDIN.read_nonblock(1000)
-				##
-			end
-		rescue Errno::EAGAIN
-			##
-		end
 	end
 
 	def say_problem op_a, op_b, operator, result 	
@@ -94,11 +85,23 @@ class MathWorker
 		end
 	end
 
+	def pick_operands operator
+		op_a = nil
+		begin
+			op_a = pick_a_number @max
+		end while op_a == @last_op_a && @max != 0
+		@last_op_a = op_a
+
+		op_max = operator.symbol == "-" ? op_a : @max
+		op_b = pick_a_number op_max
+
+		[op_a, op_b]
+	end
+
 	def process
 		
 		introduction
 
-		last_op_a = nil
 		while true do
 			first = true
 			answer = nil
@@ -106,23 +109,14 @@ class MathWorker
 			while first || answer = gets.chomp do
 				if first
 					operator = pick_an_operator
-
-					op_a = nil
-					begin
-						op_a = pick_a_number @max
-					end while op_a == last_op_a && @max != 0
-					last_op_a = op_a
-
-					op_max = operator.symbol == "-" ? op_a : @max
-					op_b = pick_a_number op_max
-
+					op_a, op_b = pick_operands(operator)
 					result = eval "#{op_a} #{operator.symbol} #{op_b}"
 					first = false
 				end
 
 				result_to_check = @algebra ? op_b : result
 	
-				eat_bytes
+				Responder.eat_bytes
 				Responder.say answer 
 				if answer != '' && !answer.nil?
 					answer = answer.to_i
